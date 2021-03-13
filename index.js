@@ -12,79 +12,73 @@ function relativeToCwd(filename) {
   return pathLib.relative(process.cwd(), filename);
 }
 
-const importMoudleTransformVisitor = {
-  ImportDeclaration(path) {
-    const transforms = [];
+const importMoudleTransformVisitor = function (innerPath) {
+  const parentState = this.state;
+  console.log('import declaration called')
+  const transforms = [];
 
-    const memberImports = path.node.specifiers.filter(specifier => isImportSpecifier(specifier.type));
-    const source = path.node.source.value;
+  const memberImports = innerPath.node.specifiers.filter(specifier => isImportSpecifier(specifier.type));
+  const source = innerPath.node.source && innerPath.node.source.value;
 
-    memberImports.forEach(memberImport => {
-      const importName = memberImport.imported.name;
-      const replacementSource = this.moduleMap[importName] && this.moduleMap[importName].path;
+  memberImports.forEach(memberImport => {
+    const importName = memberImport.imported.name;
+    const replacementSource = parentState.file.moduleMap[importName] && parentState.file.moduleMap[importName].path;
 
-      if(source === replacementSource){
-        return;
-      }
-      // t.importDeclaration(specifiers, source)
+    if (source === replacementSource) {
+      return;
+    }
+    
+    if (replacementSource) {
       transforms.push(types.importDeclaration(
         [memberImport],
         types.stringLiteral(replacementSource)
       ));
-    });
-
-    if (transforms.length) {
-      path.replaceWithMultiple(transforms);
     }
+  });
+
+  if (transforms.length) {
+    path.replaceWithMultiple(transforms);
   }
 }
 
-const exportModuleMapGeneratorVisitor = {
-  ExportNamedDeclaration(path) {
-    const source = path.node.source && path.node.source.value;
-    const specifiers = path.node.specifiers;
+const exportModuleMapGeneratorVisitor = function (innerPath) {
+  const parentState = this.state;
+  const source = innerPath.node.source && innerPath.node.source.value;
+  const specifiers = innerPath.node.specifiers;
 
-    if (!source) {
-      return;
-    }
-
-    // TODO: Change filename to state.filename
-    const currentFile = relativeToCwd(this.state.filename);
-    // const exportedModules = specifiers.map(specifier => ({
-    //   local: specifier.local.name,
-    //   alias: specifier.exported.name,
-    //   source
-    // }))
-
-    specifiers.forEach(specifier => {
-      const alias = specifier.exported.name;
-      const modulePath = pathLib.relative(process.cwd(), pathLib.resolve(currentFile, source));
-      this.moduleMap[alias] = {
-        path: modulePath
-      }
-    })
-
-    console.log({ moduleMap: JSON.stringify(this.moduleMap) })
-
-    this.programPath.traverse(importMoudleTransformVisitor, {
-      state: this.state,
-      moduleMap: this.moduleMap
-    });
+  if (!source) {
+    return;
   }
+
+  // TODO: Change filename to state.filename
+  const currentFile = relativeToCwd(parentState.filename);
+
+  specifiers.forEach(specifier => {
+    const alias = specifier.exported.name;
+    const modulePath = pathLib.relative(process.cwd(), pathLib.resolve(currentFile, source));
+    parentState.file.moduleMap[alias] = {
+      path: modulePath
+    }
+  })
+
+  console.log({ moduleMap: JSON.stringify(parentState.file.moduleMap) });
 }
 
 
 module.exports = function () {
-  const moduleMap = {};
   return {
-    visitor: {
-      Program(programPath, state) {
-        programPath.traverse(exportModuleMapGeneratorVisitor, {
-          state,
-          moduleMap,
-          programPath
-        });
-      },
+    pre(state) {
+      state.moduleMap = {}
     },
+    visitor: {
+      Program(path, state) {
+        path.traverse({
+          ExportNamedDeclaration: exportModuleMapGeneratorVisitor
+        }, { path, state })
+        path.traverse({
+          ImportDeclaration: importMoudleTransformVisitor
+        }, { path, state })
+      }
+    }
   }
 }
