@@ -1,0 +1,30 @@
+{
+  "name": "babel-plugin-treeshake-reexport",
+  "version": "0.0.1",
+  "description": "Transforms named exports to absolute path default export",
+  "keywords": [
+    "babel",
+    "transform",
+    "reexport"
+  ],
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ankitchouhan1020/babel-plugin-treeshake-reexport"
+  },
+  "homepage": "https://github.com/ankitchouhan1020/babel-plugin-treeshake-reexport",
+  "scripts": {
+    "test": "mocha --require @babel/register"
+  },
+  "author": "AMC Theatres",
+  "license": "ISC",
+  "dependencies": {
+    "@babel/types": "^7.4"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.4",
+    "@babel/preset-env": "^7.4",
+    "@babel/register": "^7.4.4",
+    "mocha": "^6.1"
+  }
+}
