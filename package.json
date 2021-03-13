@@ -1,6 +1,6 @@
 {
   "name": "babel-plugin-treeshake-reexport",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Transforms named exports to absolute path default export",
   "keywords": [
     "babel",
