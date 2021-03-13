@@ -49,7 +49,7 @@ const exportModuleMapGeneratorVisitor = {
     }
 
     // TODO: Change filename to state.filename
-    const currentFile = relativeToCwd(this.state.opts.filename);
+    const currentFile = relativeToCwd(this.state.filename);
     // const exportedModules = specifiers.map(specifier => ({
     //   local: specifier.local.name,
     //   alias: specifier.exported.name,
